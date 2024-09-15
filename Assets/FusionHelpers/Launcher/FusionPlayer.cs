@@ -34,7 +34,7 @@ namespace FusionHelpers
 			// so this particular check is very specific to Tanknarok.
 			if (Runner.Topology == Topologies.Shared)
 			{
-				if(HasStateAuthority)
+				if (HasStateAuthority)
 					eventRelay = Runner.Spawn(_eventRelayPrefab);
 				_eventStub = eventRelay;
 			}
@@ -46,14 +46,14 @@ namespace FusionHelpers
 
 			Debug.Log($"Spawned Player with InputAuth {PlayerId}, Index {PlayerIndex}");
 
-      Runner.WaitForSingleton<FusionSession>(session => session.AddPlayerAvatar(this));
+			Runner.WaitForSingleton<FusionSession>(session => session.AddPlayerAvatar(this));
 		}
 
 		public override void Despawned(NetworkRunner runner, bool hasState)
 		{
-      Debug.Log($"Despawned Player with InputAuth {PlayerId}, Index {PlayerIndex}");
+			Debug.Log($"Despawned Player with InputAuth {PlayerId}, Index {PlayerIndex}");
 
-      Runner.WaitForSingleton<FusionSession>(session => session.RemovePlayerAvatar(this));
+			Runner.WaitForSingleton<FusionSession>(session => session.RemovePlayerAvatar(this));
 		}
 
 		protected void RegisterEventListener<T>(Action<T> listener) where T : unmanaged, INetworkEvent
@@ -61,10 +61,10 @@ namespace FusionHelpers
 			_eventStub.RegisterEventListener(listener);
 		}
 
-		public void RaiseEvent<T>(T evt) where T:unmanaged, INetworkEvent
+		public void RaiseEvent<T>(T evt) where T : unmanaged, INetworkEvent
 		{
 			FusionPlayer stateAuth = Runner.GetPlayerObject(Runner.LocalPlayer).GetComponent<FusionPlayer>();
-			stateAuth._eventStub.RaiseEventFor( _eventStub, evt);
+			stateAuth._eventStub.RaiseEventFor(_eventStub, evt);
 		}
 
 		public abstract void InitNetworkState();

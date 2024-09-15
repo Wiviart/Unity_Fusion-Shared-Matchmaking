@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,17 +11,22 @@ public class UI_Notification : MonoBehaviour
 
     void Start()
     {
-        Hide();
+        Hide(0);
     }
 
-    public void Show(string message)
+    public void Show(string message, float delay = 0)
     {
         _text.text = message;
         gameObject.SetActive(true);
+
+        if (delay != 0) Hide(delay);
     }
 
-    public void Hide()
+    async void Hide(float delay)
     {
+        await Task.Delay(TimeSpan.FromSeconds(delay));
+        if (!gameObject) return;
         gameObject.SetActive(false);
     }
 }
+

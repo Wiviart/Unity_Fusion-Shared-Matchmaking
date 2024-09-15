@@ -19,7 +19,7 @@ public class UI_Menu : MonoBehaviour
         OnClickCancelButton();
     }
 
-    private void OnClickCancelButton()
+    internal void OnClickCancelButton()
     {
         _menuPanel.SetActive(true);
         _roomPanel.SetActive(false);

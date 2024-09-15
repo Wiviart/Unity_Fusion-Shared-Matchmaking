@@ -2,10 +2,32 @@ using System;
 using System.Collections.Generic;
 using FusionHelpers;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ReadyUpManager : MonoBehaviour
 {
     private float _delay;
+    [SerializeField] private GameObject _disconnectPrompt;
+    [SerializeField] Button yesButton;
+
+    private void Start()
+    {
+        _disconnectPrompt.SetActive(false);
+        yesButton.onClick.AddListener(AttemptDisconnect);
+    }
+
+    void AttemptDisconnect()
+    {
+        GameManager.Instance.DisconnectByPrompt = true;
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ShowDisconnectPrompt();
+        }
+    }
 
     public void UpdateUI(GameManager.PlayState playState, IEnumerable<FusionPlayer> allPlayers, Action onAllPlayersReady)
     {
@@ -26,13 +48,14 @@ public class ReadyUpManager : MonoBehaviour
 
         // gameObject.SetActive(true);
 
-        int playerCount = 0, readyCount = 0;
-        foreach (FusionPlayer fusionPlayer in allPlayers)
+        int  readyCount = 0;
+        foreach (var fusionPlayer in allPlayers)
         {
             Player player = (Player)fusionPlayer;
-            if (player.ready)
+            if (player.Ready)
+            {
                 readyCount++;
-            playerCount++;
+            }
         }
 
         // foreach (ReadyupIndicator ui in _readyUIs.Values)
@@ -54,7 +77,7 @@ public class ReadyUpManager : MonoBehaviour
         //         _audioEmitter.PlayOneShot();
         // }
 
-        bool allPlayersReady = readyCount == playerCount;
+        bool allPlayersReady = readyCount == ConstVariables.PLAYER_COUNT;
 
         // _disconnectInfoText.SetActive(!allPlayersReady);
         // _readyupInfoText.SetActive(!allPlayersReady && playerCount > 1);
@@ -64,5 +87,11 @@ public class ReadyUpManager : MonoBehaviour
             _delay = 2.0f;
             onAllPlayersReady();
         }
+    }
+
+    internal void ShowDisconnectPrompt()
+    {
+        if (_disconnectPrompt.activeSelf) return;
+        _disconnectPrompt.SetActive(true);
     }
 }

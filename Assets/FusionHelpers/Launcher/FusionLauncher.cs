@@ -52,10 +52,6 @@ namespace FusionHelpers
 		{
 			FusionLauncher launcher = new GameObject("Launcher").AddComponent<FusionLauncher>();
 
-			// In non-shared mode, we need a hitbox manager to make sure lag compensation works properly.
-			if (mode != GameMode.Shared)
-				launcher.gameObject.AddComponent<HitboxManager>();
-
 			launcher.InternalLaunch(mode, region, room, sessionPrefab, sceneLoader, onConnect);
 			return launcher;
 		}

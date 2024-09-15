@@ -65,16 +65,16 @@ public class UI_Room : MonoBehaviour
         switch (_status)
         {
             case FusionLauncher.ConnectionStatus.Disconnected:
-                _notification.Show("Disconnected!");
+                _notification.Show("Disconnected!", 3);
                 break;
             case FusionLauncher.ConnectionStatus.Failed:
-                _notification.Show("Failed!");
+                _notification.Show("Failed!", 1);
                 break;
             case FusionLauncher.ConnectionStatus.Connecting:
                 _notification.Show("Connecting");
                 break;
             case FusionLauncher.ConnectionStatus.Connected:
-                _notification.Hide();
+                _notification.Show("Connected", 1);
                 gameObject.SetActive(false);
                 break;
             case FusionLauncher.ConnectionStatus.Loading:

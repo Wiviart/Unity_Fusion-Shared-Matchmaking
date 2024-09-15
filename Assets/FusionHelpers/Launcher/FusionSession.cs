@@ -14,12 +14,12 @@ namespace FusionHelpers
 
 	public abstract class FusionSession : NetworkBehaviour
 	{
-		private const int MAX_PLAYERS = 4;
+		private const int MAX_PLAYERS = ConstVariables.PLAYER_COUNT;
 
-		[SerializeField] private FusionPlayer _playerPrefab;
+		[SerializeField] protected FusionPlayer _playerPrefab;
 
 		[Networked, Capacity(MAX_PLAYERS)] public NetworkDictionary<int, PlayerRef> playerRefByIndex { get; }
-		private Dictionary<PlayerRef, FusionPlayer> _players = new();
+		protected Dictionary<PlayerRef, FusionPlayer> _players = new();
 
 		protected abstract void OnPlayerAvatarAdded(FusionPlayer fusionPlayer);
 		protected abstract void OnPlayerAvatarRemoved(FusionPlayer fusionPlayer);
@@ -40,7 +40,7 @@ namespace FusionHelpers
 				MaybeSpawnNextAvatar();
 		}
 
-		private void MaybeSpawnNextAvatar()
+		protected virtual void MaybeSpawnNextAvatar()
 		{
 			foreach (KeyValuePair<int, PlayerRef> refByIndex in playerRefByIndex)
 			{

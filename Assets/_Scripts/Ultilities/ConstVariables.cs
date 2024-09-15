@@ -5,5 +5,7 @@ public class ConstVariables
     public const int GAMEPLAY = 3;
 
     public const int PLAYER_COUNT = 2;
-    public const float WAIT_TIME = 5.0f;
+    public const int WAIT_TIME = 5;
+    public const int WAIT_TIME_TO_READY = 15;
+
 }

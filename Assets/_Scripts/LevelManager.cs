@@ -10,13 +10,6 @@ using Random = UnityEngine.Random;
 public class LevelManager : NetworkSceneManagerDefault
 {
 	private SceneRef _loadedScene = SceneRef.None;
-	public ReadyUpManager readyUpManager
-	{
-		get
-		{
-			return FindObjectOfType<ReadyUpManager>();
-		}
-	}
 
 	public void LoadLevel(int nextLevelIndex)
 	{
@@ -24,7 +17,6 @@ public class LevelManager : NetworkSceneManagerDefault
 		{
 			Debug.Log($"LevelManager.UnloadLevel(); _loadedScene={_loadedScene}");
 			Runner.UnloadScene(_loadedScene);
-			//UnloadScene();
 			_loadedScene = SceneRef.None;
 		}
 		Debug.Log($"LevelManager.LoadLevel({nextLevelIndex});");
@@ -33,4 +25,17 @@ public class LevelManager : NetworkSceneManagerDefault
 		_loadedScene = SceneRef.FromIndex(nextLevelIndex);
 	}
 
+	public override void Shutdown()
+	{
+		Debug.Log("LevelManager.Shutdown();");
+		if (_loadedScene.IsValid)
+		{
+			Debug.Log($"LevelManager.UnloadLevel(); _loadedScene={_loadedScene}");
+			SceneManager.UnloadSceneAsync(_loadedScene.AsIndex);
+			_loadedScene = SceneRef.None;
+		}
+		base.Shutdown();
+
+		FindObjectOfType<UI_Menu>().OnClickCancelButton();
+	}
 }
