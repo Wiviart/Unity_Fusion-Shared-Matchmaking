@@ -1,20 +1,23 @@
 using UnityEngine;
 using Fusion;
-using FusionHelpers;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 
-public class GameManager : FusionSession
+public class GameManager : NetworkBehaviour
 {
 	public static GameManager Instance { get; private set; }
+	public Player _playerPrefab;
 	public enum PlayState { LOBBY, LEVEL, TRANSITION }
 	[Networked] public PlayState currentPlayState { get; set; }
 	public UI_Countdown countdownPrefab;
-	private bool _restart;
 	public bool DisconnectByPrompt { get; set; }
+	List<Player> AllPlayers = new List<Player>();
+	bool allReady = false;
+	PlayerRef localPlayer;
+
 	public const ShutdownReason ShutdownReason_GameAlreadyRunning = (ShutdownReason)100;
 	UI_Countdown countdown;
 
@@ -23,59 +26,77 @@ public class GameManager : FusionSession
 		base.Spawned();
 
 		Instance = this;
-		Runner.RegisterSingleton(this);
+		DontDestroyOnLoad(gameObject);
 
 		if (Object.HasStateAuthority)
 		{
-			LoadLevel(ConstVariables.LOBBY);
+			ChangeState(PlayState.LOBBY);
 		}
 		else if (currentPlayState != PlayState.LOBBY)
 		{
 			Debug.Log("Rejecting Player, game is already running!");
-			_restart = true;
 		}
 
 		countdown = Instantiate(countdownPrefab);
 		countdown.ShowText("");
 	}
 
+	private void ChangeState(PlayState state)
+	{
+		currentPlayState = state;
+
+		switch (state)
+		{
+			case PlayState.LOBBY:
+				LoadLevel(ConstVariables.LOBBY);
+				StartCoroutine(SpawnPlayer());
+				break;
+			case PlayState.LEVEL:
+				LoadLevel(ConstVariables.GAMEPLAY);
+				break;
+		}
+	}
+
+	private IEnumerator SpawnPlayer()
+	{
+		SpawnPositions spawns = FindObjectOfType<SpawnPositions>();
+		while (!spawns)
+		{
+			spawns = FindObjectOfType<SpawnPositions>();
+			yield return null;
+		}
+
+		Debug.Log($"I am {Runner.LocalPlayer} and I am {(Runner.IsServer ? "Server" : "Master")}. The Session StateAuth is: {Object.StateAuthority} - Assigning to PlayerRef {localPlayer}");
+
+		Player player = Runner.Spawn(_playerPrefab);
+		Runner.SetPlayerObject(Runner.LocalPlayer, player.GetComponent<NetworkObject>());
+		player.Init(spawns);
+		AllPlayers.Add(player);
+	}
+
+	public void SetLocalPlayer(PlayerRef player)
+	{
+		localPlayer = player;
+	}
+
 	void Update()
 	{
 		ReadyUpManager readyUpManager = FindObjectOfType<ReadyUpManager>();
-		if (readyUpManager != null)
+		if (readyUpManager != null && AllPlayers.Count > 0)
 			readyUpManager.UpdateUI(currentPlayState, AllPlayers, OnAllPlayersReady);
 
-		if (_players.Count == ConstVariables.PLAYER_COUNT && !isCountingDown)
-		{
-			StartCoroutine(CountdownToReady());
-		}
-
-		// if (_restart || DisconnectByPrompt)
+		// if (_players.Count == ConstVariables.PLAYER_COUNT && !isCountingDown)
 		// {
-		// 	Restart(_restart ? ShutdownReason_GameAlreadyRunning : ShutdownReason.Ok);
-		// 	_restart = false;
-
-		// 	DisconnectByPrompt = true;
+		// 	StartCoroutine(CountdownToReady());
 		// }
-	}
-
-	protected override void OnPlayerAvatarAdded(FusionPlayer fusionPlayer)
-	{
-		StartCoroutine(SetPlayerSpawnPosition((Player)fusionPlayer));
-	}
-
-	protected override void OnPlayerAvatarRemoved(FusionPlayer fusionPlayer)
-	{
-
 	}
 
 	public void OnReadyButtonClicked()
 	{
-		Player player = GetPlayer<Player>(Runner.LocalPlayer);
+		Player player = Runner.GetPlayerObject(Runner.LocalPlayer).GetComponent<Player>();
 		player.ToggleReady();
 	}
 
-	bool allReady = false;
 	public void OnAllPlayersReady()
 	{
 		if (allReady) return;
@@ -104,17 +125,11 @@ public class GameManager : FusionSession
 		}
 
 		Destroy(countdown.gameObject);
-		LoadLevel(ConstVariables.GAMEPLAY);
-
-		yield return null;
-
-		foreach (Player p in AllPlayers.Cast<Player>())
-		{
-			StartCoroutine(SetPlayerSpawnPosition(p));
-		}
+		ChangeState(PlayState.LEVEL);
 	}
 
 	bool isCountingDown = false;
+
 	IEnumerator CountdownToReady()
 	{
 		isCountingDown = true;
@@ -140,62 +155,5 @@ public class GameManager : FusionSession
 		if (!Object.HasStateAuthority) return;
 
 		Runner.GetLevelManager().LoadLevel(nextLevelIndex);
-	}
-
-	IEnumerator SetPlayerSpawnPosition(Player player)
-	{
-		var spawns = FindObjectOfType<SpawnPositions>();
-		while (spawns == null)
-		{
-			spawns = FindObjectOfType<SpawnPositions>();
-			yield return null;
-		}
-
-		foreach (Player p in AllPlayers.Cast<Player>())
-		{
-			if (p.PlayerIndex == player.PlayerIndex)
-			{
-				p.GetComponent<Transform>().position = spawns.GetSpawnPosition(player.PlayerIndex);
-				break;
-			}
-		}
-	}
-
-	internal void OnQuitButtonClicked()
-	{
-		DisconnectByPrompt = true;
-	}
-
-	public void Restart(ShutdownReason shutdownReason)
-	{
-		if (!Runner.IsShutdown)
-		{
-			// Calling with destroyGameObject false because we do this in the OnShutdown callback on FusionLauncher
-			Runner.Shutdown(false, shutdownReason);
-			_restart = false;
-		}
-	}
-
-	protected override void MaybeSpawnNextAvatar()
-	{
-		foreach (KeyValuePair<int, PlayerRef> refByIndex in playerRefByIndex)
-		{
-			if (Runner.IsServer || (Runner.Topology == Topologies.Shared && refByIndex.Value == Runner.LocalPlayer))
-			{
-				if (!_players.TryGetValue(refByIndex.Value, out _))
-				{
-					Debug.Log($"I am State Auth for Player Index {refByIndex.Key} - Spawning Avatar");
-					Runner.SpawnAsync(_playerPrefab, Vector3.zero, Quaternion.identity, refByIndex.Value, (runner, o) =>
-					{
-						Runner.SetPlayerObject(refByIndex.Value, o);
-						if (o.TryGetComponent<FusionPlayer>(out var player))
-						{
-							player.NetworkedPlayerIndex = refByIndex.Key;
-							player.InitNetworkState();
-						}
-					});
-				}
-			}
-		}
 	}
 }

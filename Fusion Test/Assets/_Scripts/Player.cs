@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Threading.Tasks;
 using Fusion;
-using FusionHelpers;
+
 using UnityEngine;
 
-public class Player : FusionPlayer
+public class Player : NetworkBehaviour
 {
 	[Networked] public bool Ready { get; set; }
 	[SerializeField] private GameObject _readyPrefab;
@@ -20,9 +20,10 @@ public class Player : FusionPlayer
 		_readyUI.SetActive(Ready);
 	}
 
-	public override void InitNetworkState()
+	public void Init(SpawnPositions spawner)
 	{
-		gameObject.name = $"Player {PlayerIndex}";
+		gameObject.name = $"Player {Id}";
+		transform.position = spawner.GetSpawnPosition().position;
 	}
 
 	public void ToggleReady()
@@ -31,6 +32,6 @@ public class Player : FusionPlayer
 
 		_readyUI.SetActive(Ready);
 
-		Debug.Log("Player " + PlayerId + " is " + (Ready ? "ready" : "not ready"));
+		Debug.Log("Player " + Id + " is " + (Ready ? "ready" : "not ready"));
 	}
 }

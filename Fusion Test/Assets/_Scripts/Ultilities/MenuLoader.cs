@@ -5,6 +5,11 @@ public class MenuLoader : MonoBehaviour
 {
     void Start()
     {
+        LoadMenu();
+    }
+
+    public static void LoadMenu()
+    {
         SceneManager.LoadScene(ConstVariables.MENU);
     }
 }

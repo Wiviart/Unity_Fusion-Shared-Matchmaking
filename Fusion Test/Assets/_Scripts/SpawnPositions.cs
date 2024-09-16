@@ -5,24 +5,26 @@ using UnityEngine;
 public class SpawnPositions : MonoBehaviour
 {
     public Transform[] spawnPositions;
-    Dictionary<int, bool> _usedPositions = new Dictionary<int, bool>();
+    Dictionary<Transform, bool> _usedPositions = new Dictionary<Transform, bool>();
 
-    public Vector3 GetSpawnPosition(int index)
+    private void Start()
     {
-        if (index < 0 || index >= spawnPositions.Length)
+        foreach (var spawnPosition in spawnPositions)
         {
-            Debug.LogError("Invalid spawn position index: " + index);
-            return Vector3.zero;
+            _usedPositions.Add(spawnPosition, false);
+        }
+    }
+
+    public Transform GetSpawnPosition()
+    {
+        foreach (var spawnPosition in spawnPositions)
+        {
+            if (_usedPositions[spawnPosition]) continue;
+
+            _usedPositions[spawnPosition] = true;
+            return spawnPosition;
         }
 
-        if (_usedPositions.ContainsKey(index) && _usedPositions[index])
-        {
-            Debug.LogError("Spawn position already used: " + index);
-            return Vector3.zero;
-        }
-
-        Debug.Log("Spawn position used: " + index);
-        _usedPositions[index] = true;
-        return spawnPositions[index].position;
+        return null;
     }
 }
