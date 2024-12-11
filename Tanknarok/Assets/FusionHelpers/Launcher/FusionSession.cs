@@ -15,7 +15,7 @@ namespace FusionHelpers
 	public abstract class FusionSession : NetworkBehaviour
 	{
 		private const int MAX_PLAYERS = 4;
-		
+
 		[SerializeField] private FusionPlayer _playerPrefab;
 
 		[Networked, Capacity(MAX_PLAYERS)] public NetworkDictionary<int, PlayerRef> playerRefByIndex { get; }
@@ -27,22 +27,22 @@ namespace FusionHelpers
 		public IEnumerable<FusionPlayer> AllPlayers => _players.Values;
 		public int PlayerCount => _players.Count;
 		public int SessionCount => playerRefByIndex.Count;
-		
+
 		public override void Spawned()
 		{
-      Debug.Log($"Spawned Network Session for Runner: {Runner}");
-      Runner.RegisterSingleton(this);
+			Debug.Log($"Spawned Network Session for Runner: {Runner}");
+			Runner.RegisterSingleton(this);
 		}
 
 		public override void Render()
 		{
-			if(Runner && Runner.Topology==Topologies.Shared && _players.Count!=playerRefByIndex.Count)
+			if (Runner && Runner.Topology == Topologies.Shared && _players.Count != playerRefByIndex.Count)
 				MaybeSpawnNextAvatar();
 		}
 
 		private void MaybeSpawnNextAvatar()
 		{
-			foreach (KeyValuePair<int,PlayerRef> refByIndex in playerRefByIndex)
+			foreach (KeyValuePair<int, PlayerRef> refByIndex in playerRefByIndex)
 			{
 				if (Runner.IsServer || (Runner.Topology == Topologies.Shared && refByIndex.Value == Runner.LocalPlayer))
 				{
@@ -75,22 +75,22 @@ namespace FusionHelpers
 		{
 			Debug.Log($"Removing PlayerRef {fusionPlayer.PlayerId}");
 			_players.Remove(fusionPlayer.PlayerId);
-			if(Object!=null && Object.IsValid)
+			if (Object != null && Object.IsValid)
 				playerRefByIndex.Remove(fusionPlayer.PlayerIndex);
 			OnPlayerAvatarRemoved(fusionPlayer);
 		}
 
-		public T GetPlayer<T>(PlayerRef plyRef) where T: FusionPlayer
+		public T GetPlayer<T>(PlayerRef plyRef) where T : FusionPlayer
 		{
 			_players.TryGetValue(plyRef, out FusionPlayer ply);
 			return (T)ply;
 		}
 
-		public T GetPlayerByIndex<T>(int idx) where T: FusionPlayer
+		public T GetPlayerByIndex<T>(int idx) where T : FusionPlayer
 		{
 			foreach (FusionPlayer player in _players.Values)
 			{
-				if (player.Object!=null && player.Object.IsValid && player.PlayerIndex == idx)
+				if (player.Object != null && player.Object.IsValid && player.PlayerIndex == idx)
 					return (T)player;
 			}
 			return default;
@@ -98,9 +98,9 @@ namespace FusionHelpers
 
 		private int NextPlayerIndex()
 		{
-			for (int idx=0;idx<Runner.Config.Simulation.PlayerCount;idx++)
+			for (int idx = 0; idx < Runner.Config.Simulation.PlayerCount; idx++)
 			{
-				if (!playerRefByIndex.TryGet(idx, out _) )
+				if (!playerRefByIndex.TryGet(idx, out _))
 					return idx;
 			}
 			Debug.LogWarning("No free player index!");
@@ -119,12 +119,12 @@ namespace FusionHelpers
 					Debug.Log($"Despawning PlayerAvatar for PlayerRef {player.PlayerId}");
 					Runner.Despawn(player.Object);
 				}
-				
+
 				// This means only on player remains
 				if (Runner.SessionInfo.PlayerCount == 1)
-                {
+				{
 					Runner.Shutdown(false);
-                }
+				}
 			}
 		}
 
@@ -132,7 +132,7 @@ namespace FusionHelpers
 		{
 			int nextIndex = NextPlayerIndex();
 
-			Debug.Log($"I am {Runner.LocalPlayer} and I am {(Runner.IsServer ? "Server":"Master")}. The Session StateAuth is: {Object.StateAuthority} - Assigning Index {nextIndex} to PlayerRef {player}");
+			Debug.Log($"I am {Runner.LocalPlayer} and I am {(Runner.IsServer ? "Server" : "Master")}. The Session StateAuth is: {Object.StateAuthority} - Assigning Index {nextIndex} to PlayerRef {player}");
 			playerRefByIndex.Set(nextIndex, player);
 			MaybeSpawnNextAvatar();
 		}
